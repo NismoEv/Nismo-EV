@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="NISMO EV">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.svg">
-<title>NISMO EV 3.2</title>
+<title>NISMO EV 3.3</title>
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
 window.OneSignalDeferred=window.OneSignalDeferred||[];
@@ -45,7 +45,7 @@ label{display:block;font-size:.82rem;color:var(--muted)}input,select{width:100%;
 </head>
 <body>
 <div class="app">
-<div class="top"><div><div class="brand">NISMO <b>EV</b></div><div class="sub">Charging calculator, timer and history</div></div><div class="badge">3.2</div></div>
+<div class="top"><div><div class="brand">NISMO <b>EV</b></div><div class="sub">Charging calculator, timer and history</div></div><div class="badge">3.3</div></div>
 <div class="tabs tabs4"><button class="tab active" data-view="calculator">Calculator</button><button class="tab" data-view="timer">Timer</button><button class="tab" data-view="history">History</button><button class="tab" data-view="diagnostics">Diagnostics</button></div>
 
 <main id="calculator" class="view active">
@@ -65,7 +65,7 @@ label{display:block;font-size:.82rem;color:var(--muted)}input,select{width:100%;
 
 <main id="timer" class="view">
 <section class="card"><h2>Charging alarm</h2><div id="notificationStatus" class="statusPill">Notifications not checked</div><button class="primary" id="enableNotifications">ENABLE NOTIFICATIONS</button><p class="notice">On iPhone, open NISMO EV from its Home Screen icon before enabling notifications.</p></section>
-<section class="card"><div class="grid"><label>Timer duration (minutes)<input id="timerMinutes" type="number" value="60" min="1"></label><label>Alarm label<input id="alarmLabel" type="text" value="Charging complete"></label></div><div class="timer" id="countdown">01:00:00</div><div class="timerStatus" id="timerStatus">Ready</div><div class="actionRow"><button class="primary" id="startTimer">START TIMER</button><button class="danger" id="cancelTimer">CANCEL</button></div><button class="secondary" id="testAlarm" style="width:100%;margin-top:10px">TEST ALARM</button><p class="notice">Sound and vibration are reliable while the app remains active. Automatic closed-app delivery at a unique future time still requires a secure scheduling backend.</p></section>
+<section class="card"><div class="grid"><label>Timer duration (minutes)<input id="timerMinutes" type="number" value="60" min="1"></label><label>Alarm label<input id="alarmLabel" type="text" value="Charging complete"></label></div><div class="timer" id="countdown">01:00:00</div><div class="timerStatus" id="timerStatus">Ready</div><div class="actionRow"><button class="primary" id="startTimer">START TIMER</button><button class="danger" id="cancelTimer">CANCEL</button></div><button class="secondary" id="testAlarm" style="width:100%;margin-top:10px">TEST ALARM</button><p class="notice">Start Timer now securely schedules a OneSignal push through Cloudflare, so the completion alert can arrive after the app is closed.</p></section>
 </main>
 
 <main id="history" class="view">
@@ -157,8 +157,50 @@ window.addEventListener("onesignal-ready",async()=>{
  }catch(e){}
 });
 const formatRemaining=ms=>{const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return[h,m,sec].map(x=>String(x).padStart(2,"0")).join(":")};
-function startTimer(){const mins=+$("timerMinutes").value;if(!mins||mins<1)return;timerEnd=Date.now()+mins*60000;localStorage.setItem("nismoTimerEnd",String(timerEnd));localStorage.setItem("nismoTimerLabel",$("alarmLabel").value||"Charging complete");$("timerStatus").textContent="Charging timer running";clearInterval(timerInterval);timerInterval=setInterval(tick,1000);tick()}
-function cancelTimer(){clearInterval(timerInterval);timerInterval=null;timerEnd=0;localStorage.removeItem("nismoTimerEnd");localStorage.removeItem("nismoTimerLabel");$("countdown").textContent="00:00:00";$("timerStatus").textContent="Cancelled"}
+const NOTIFICATION_BACKEND="https://nismo-ev-scheduler1.mattdicker876.workers.dev";
+
+async function schedulePushNotification(sendAt,label){
+ const response=await fetch(NOTIFICATION_BACKEND,{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+   sendAt:sendAt.toISOString(),
+   label:label||"Your charging session is complete."
+  })
+ });
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok||!result.success){
+  throw new Error(result.error||"Unable to schedule push notification");
+ }
+ return result;
+}
+
+async function startTimer(){
+ const mins=+$("timerMinutes").value;
+ if(!mins||mins<1){$("timerStatus").textContent="Enter a valid timer duration";return}
+ const label=$("alarmLabel").value||"Charging complete";
+ timerEnd=Date.now()+mins*60000;
+ const finishTime=new Date(timerEnd);
+ localStorage.setItem("nismoTimerEnd",String(timerEnd));
+ localStorage.setItem("nismoTimerLabel",label);
+ $("startTimer").disabled=true;
+ $("startTimer").textContent="SCHEDULING…";
+ $("timerStatus").textContent="Scheduling secure push…";
+ try{
+  const result=await schedulePushNotification(finishTime,label);
+  localStorage.setItem("nismoScheduledNotificationId",result.notificationId||"");
+  $("timerStatus").textContent="Push scheduled for "+finishTime.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+ }catch(error){
+  $("timerStatus").textContent="Timer started — push scheduling failed";
+  console.error(error);
+ }
+ $("startTimer").disabled=false;
+ $("startTimer").textContent="START TIMER";
+ clearInterval(timerInterval);
+ timerInterval=setInterval(tick,1000);
+ tick();
+}
+function cancelTimer(){clearInterval(timerInterval);timerInterval=null;timerEnd=0;localStorage.removeItem("nismoTimerEnd");localStorage.removeItem("nismoTimerLabel");$("countdown").textContent="00:00:00";$("timerStatus").textContent="Local timer cancelled. A previously scheduled push may still arrive."}
 function tick(){const remaining=timerEnd-Date.now();$("countdown").textContent=formatRemaining(remaining);if(remaining<=0){clearInterval(timerInterval);timerInterval=null;localStorage.removeItem("nismoTimerEnd");alarm()}}
 function beep(){audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;g.gain.value=.18;o.start();setTimeout(()=>o.stop(),700)}
 async function alarm(){const label=localStorage.getItem("nismoTimerLabel")||$("alarmLabel").value||"Charging complete";$("timerStatus").textContent=label;$("countdown").textContent="DONE";for(let i=0;i<3;i++)setTimeout(beep,i*900);if(navigator.vibrate)navigator.vibrate([500,250,500,250,800]);if("Notification"in window&&Notification.permission==="granted"){try{new Notification("NISMO EV",{body:label,icon:"icon-192.svg"})}catch(e){}}saveHistory()}
