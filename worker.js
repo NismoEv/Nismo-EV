@@ -96,18 +96,24 @@ export default {
             en: label
           },
           send_after: sendAt.toISOString(),
-          url: APP_URL,
-          web_url: APP_URL
+          url: APP_URL
         })
       }
     );
 
     const result = await oneSignalResponse.json().catch(() => ({}));
 
+    console.log("OneSignal response", {
+      status: oneSignalResponse.status,
+      ok: oneSignalResponse.ok,
+      result
+    });
+
     if (!oneSignalResponse.ok || !result.id) {
       return json(
         {
           error: "OneSignal rejected the schedule request",
+          oneSignalStatus: oneSignalResponse.status,
           details: result
         },
         502

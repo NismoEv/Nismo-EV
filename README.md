@@ -1,25 +1,11 @@
-# NISMO EV 3.2 — OneSignal-only service worker
+# NISMO EV Worker diagnostic update
 
-## GitHub changes
+Replace `worker.js` in the GitHub repository with this file.
 
-1. Delete `sw.js` from the repository.
-2. Replace `index.html` with this version.
-3. Keep:
-   - `OneSignalSDKWorker.js`
-   - `manifest.json`
-   - `icon-192.svg`
-   - `icon-512.svg`
+This update:
+- Removes the extra `web_url` field
+- Keeps the supported `url` field
+- Logs OneSignal's exact HTTP status and response body in Cloudflare Logs
+- Returns the OneSignal status to the app when scheduling fails
 
-Do not upload a new `sw.js`.
-
-## First launch
-
-After GitHub Pages deploys:
-
-1. Delete NISMO EV from the iPhone Home Screen.
-2. Remove website data for `nismoev.github.io` in Safari settings.
-3. Add the site to the Home Screen again.
-4. Open it from the Home Screen.
-5. Go to Diagnostics and tap `RESET PUSH SETUP` once.
-6. After reload, go to Timer and tap `ENABLE NOTIFICATIONS`.
-7. Check Diagnostics. The worker URL should end in `OneSignalSDKWorker.js`, `Opted in` should be `true`, and Subscription ID should not be `none`.
+Cloudflare should automatically deploy after the GitHub commit.
