@@ -1,15 +1,17 @@
-# NISMO EV 2.0
+# NISMO EV 3.0
 
-Installable EV charging calculator for GitHub Pages.
-
-## Upload these files to the repository root
+Replace these files in the repository root:
 
 - `index.html`
 - `manifest.json`
 - `sw.js`
+
+Keep these existing files:
+
+- `OneSignalSDKWorker.js`
 - `icon-192.svg`
 - `icon-512.svg`
 
-Replace the existing `index.html`, then commit all files. GitHub Pages will update automatically.
+After committing, wait for GitHub Pages to deploy. Delete the existing Home Screen app and add it again.
 
-After the update appears, remove the old Home Screen shortcut and add the site to the Home Screen again so the new icon and PWA configuration are used.
+The app includes OneSignal permission setup, a persistent countdown, sound, vibration, local notification support, and charging history. A unique push notification scheduled for a future finish time while the app is fully closed requires a secure backend. Never put a OneSignal REST API key in the public website.

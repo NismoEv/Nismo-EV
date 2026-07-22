@@ -1,11 +1,12 @@
 {
-  "name": "NISMO EV Charging Calculator",
+  "name": "NISMO EV Charging Companion",
   "short_name": "NISMO EV",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#070707",
-  "theme_color": "#090909",
-  "description": "EV charging time, cost, range and gas savings calculator.",
+  "background_color": "#060606",
+  "theme_color": "#080808",
+  "description": "EV charging calculator, timer and charging history.",
   "icons": [
     {
       "src": "icon-192.svg",
