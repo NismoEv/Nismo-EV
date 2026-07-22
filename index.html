@@ -20,6 +20,11 @@ OneSignalDeferred.push(async function(OneSignal){
   serviceWorkerParam:{scope:"/Nismo-EV/"},
   notifyButton:{enable:false}
  });
+
+ // Attach this browser/device subscription to a stable OneSignal External ID.
+ await OneSignal.login("matt-ariya");
+
+ // Store the SDK instance for the app's notification controls.
  window.NismoOneSignal=OneSignal;
  window.dispatchEvent(new Event("onesignal-ready"));
 });
@@ -84,8 +89,58 @@ $("vehicle").addEventListener("change",e=>{if(e.target.value!=="custom"){const[b
 $("calculate").addEventListener("click",calculate);
 document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));tab.classList.add("active");$(tab.dataset.view).classList.add("active");if(tab.dataset.view==="history")renderHistory()}));
 $("useTimer").addEventListener("click",()=>{calculate();if(!lastResult)return;$("timerMinutes").value=Math.max(1,Math.round(lastResult.hours*60));document.querySelector('[data-view="timer"]').click()});
-async function enableNotifications(){const pill=$("notificationStatus");try{if(window.NismoOneSignal){await window.NismoOneSignal.Notifications.requestPermission();const granted=window.NismoOneSignal.Notifications.permission;pill.textContent=granted?"Notifications enabled":"Permission not granted";pill.className="statusPill "+(granted?"good":"warn")}else if("Notification"in window){const p=await Notification.requestPermission();pill.textContent=p==="granted"?"Notifications enabled":"Permission not granted"}else pill.textContent="Notifications unavailable"}catch(e){pill.textContent="Could not enable notifications"}}
-$("enableNotifications").addEventListener("click",enableNotifications);window.addEventListener("onesignal-ready",()=>{$("notificationStatus").textContent="OneSignal ready"});
+async function refreshOneSignalStatus(){
+ const pill=$("notificationStatus");
+ try{
+  if(!window.NismoOneSignal){pill.textContent="OneSignal is loading";return}
+  const permission=window.NismoOneSignal.Notifications.permission;
+  const optedIn=window.NismoOneSignal.User.PushSubscription.optedIn;
+  const subscriptionId=window.NismoOneSignal.User.PushSubscription.id;
+  if(permission&&optedIn&&subscriptionId){
+   pill.textContent="Registered as matt-ariya";
+   pill.className="statusPill good";
+   $("enableNotifications").textContent="NOTIFICATIONS ACTIVE";
+   $("enableNotifications").disabled=true;
+   $("enableNotifications").style.opacity=".65";
+  }else if(permission){
+   pill.textContent="Permission granted — finishing registration";
+   pill.className="statusPill warn";
+  }else{
+   pill.textContent="Notifications not enabled";
+   pill.className="statusPill";
+  }
+ }catch(e){
+  pill.textContent="Unable to check registration";
+ }
+}
+async function enableNotifications(){
+ const pill=$("notificationStatus");
+ try{
+  if(window.NismoOneSignal){
+   await window.NismoOneSignal.login("matt-ariya");
+   await window.NismoOneSignal.Notifications.requestPermission();
+   if(window.NismoOneSignal.Notifications.permission){
+    await window.NismoOneSignal.User.PushSubscription.optIn();
+   }
+   await new Promise(resolve=>setTimeout(resolve,1200));
+   await refreshOneSignalStatus();
+  }else if("Notification"in window){
+   const p=await Notification.requestPermission();
+   pill.textContent=p==="granted"?"Permission granted":"Permission not granted";
+  }else{
+   pill.textContent="Notifications unavailable";
+  }
+ }catch(e){
+  pill.textContent="Could not enable notifications";
+ }
+}
+$("enableNotifications").addEventListener("click",enableNotifications);
+window.addEventListener("onesignal-ready",async()=>{
+ await refreshOneSignalStatus();
+ try{
+  window.NismoOneSignal.User.PushSubscription.addEventListener("change",refreshOneSignalStatus);
+ }catch(e){}
+});
 const formatRemaining=ms=>{const s=Math.max(0,Math.ceil(ms/1000)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return[h,m,sec].map(x=>String(x).padStart(2,"0")).join(":")};
 function startTimer(){const mins=+$("timerMinutes").value;if(!mins||mins<1)return;timerEnd=Date.now()+mins*60000;localStorage.setItem("nismoTimerEnd",String(timerEnd));localStorage.setItem("nismoTimerLabel",$("alarmLabel").value||"Charging complete");$("timerStatus").textContent="Charging timer running";clearInterval(timerInterval);timerInterval=setInterval(tick,1000);tick()}
 function cancelTimer(){clearInterval(timerInterval);timerInterval=null;timerEnd=0;localStorage.removeItem("nismoTimerEnd");localStorage.removeItem("nismoTimerLabel");$("countdown").textContent="00:00:00";$("timerStatus").textContent="Cancelled"}
