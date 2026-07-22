@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0a">
+<title>NISMO EV</title>
+<style>
+:root{
+  --bg:#090909;--panel:#141414;--panel2:#1c1c1c;--text:#f5f5f5;--muted:#a7a7a7;
+  --red:#e10600;--red2:#ff2d27;--line:#2b2b2b;--good:#7bd88f;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:linear-gradient(180deg,#050505,#111);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  min-height:100vh;padding:18px;
+}
+.app{max-width:860px;margin:auto}
+.header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
+.brand{font-weight:900;letter-spacing:.16em;font-size:1.5rem}
+.brand span{color:var(--red)}
+.badge{font-size:.75rem;color:#fff;background:var(--red);padding:6px 9px;border-radius:999px;font-weight:700}
+.card{background:rgba(20,20,20,.96);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+h2{font-size:1rem;margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media(max-width:650px){.grid,.grid3{grid-template-columns:1fr}.header{align-items:flex-start}}
+label{display:block;font-size:.85rem;color:var(--muted)}
+input,select{
+  width:100%;margin-top:6px;padding:12px;border-radius:11px;border:1px solid var(--line);
+  background:#0e0e0e;color:var(--text);font-size:1rem;
+}
+button{
+  border:0;border-radius:11px;padding:12px 14px;font-weight:800;font-size:.95rem;cursor:pointer
+}
+.modeRow{display:flex;flex-wrap:wrap;gap:8px}
+.mode{background:#222;color:#fff;border:1px solid var(--line)}
+.mode.active{background:var(--red);border-color:var(--red)}
+.primary{width:100%;background:linear-gradient(180deg,var(--red2),var(--red));color:#fff;margin-top:12px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media(max-width:760px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.metric{background:#0f0f0f;border:1px solid var(--line);border-radius:14px;padding:13px}
+.metric .k{font-size:.78rem;color:var(--muted);margin-bottom:5px}
+.metric .v{font-size:1.22rem;font-weight:900}
+.good{color:var(--good)}
+.note{color:var(--muted);font-size:.82rem;line-height:1.45;margin-top:10px}
+.small{font-size:.8rem;color:var(--muted)}
+.footer{text-align:center;color:#777;font-size:.75rem;padding:8px 0 18px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="brand">NISMO <span>EV</span></div>
+      <div class="small">Charging, cost, finish-time, and savings calculator</div>
+    </div>
+    <div class="badge">ARIYA PRESET</div>
+  </div>
+
+  <div class="card">
+    <h2>Charging mode</h2>
+    <div class="modeRow">
+      <button class="mode active" data-power="1.44">Level 1 · 1.44 kW</button>
+      <button class="mode" data-power="3.84">Level 2 · 3.84 kW</button>
+      <button class="mode" data-power="5.76">Level 2 · 5.76 kW</button>
+      <button class="mode" data-power="7.2">Level 2 · 7.2 kW</button>
+      <button class="mode" data-power="50">DC · 50 kW</button>
+      <button class="mode" data-power="100">DC · 100 kW</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Vehicle and charge settings</h2>
+    <div class="grid">
+      <label>Vehicle
+        <select id="vehicle">
+          <option value="87|3.0">2023 Nissan Ariya Empower+ · 87 kWh</option>
+          <option value="63|3.2">Nissan Ariya 63 kWh</option>
+          <option value="91|3.0">Custom 91 kWh EV</option>
+          <option value="custom">Custom vehicle</option>
+        </select>
+      </label>
+      <label>Usable battery capacity (kWh)
+        <input id="battery" type="number" min="1" step="0.1" value="87">
+      </label>
+      <label>Starting battery (%)
+        <input id="startPct" type="number" min="0" max="100" value="25">
+      </label>
+      <label>Target battery (%)
+        <input id="targetPct" type="number" min="0" max="100" value="80">
+      </label>
+      <label>Charging power (kW)
+        <input id="power" type="number" min="0.1" step="0.01" value="1.44">
+      </label>
+      <label>Charging loss (%)
+        <input id="loss" type="number" min="0" max="40" value="10">
+      </label>
+      <label>Driving efficiency (mi/kWh)
+        <input id="efficiency" type="number" min="0.5" step="0.1" value="3.0">
+      </label>
+      <label>Charging start time
+        <input id="startTime" type="datetime-local">
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Electricity rate</h2>
+    <div class="grid">
+      <label>Rate preset
+        <select id="ratePreset">
+          <option value="0.15">Home estimate · $0.150/kWh</option>
+          <option value="0.12">Low-cost home · $0.120/kWh</option>
+          <option value="0.18">Higher home rate · $0.180/kWh</option>
+          <option value="0.54">Public DC fast · $0.540/kWh</option>
+          <option value="0.57">Public DC fast · $0.570/kWh</option>
+          <option value="custom">Custom rate</option>
+        </select>
+      </label>
+      <label>Electricity cost ($/kWh)
+        <input id="rate" type="number" min="0" step="0.001" value="0.15">
+      </label>
+    </div>
+    <div class="note">Use the exact all-in rate from your bill for the most accurate home-charging estimate.</div>
+  </div>
+
+  <div class="card">
+    <h2>EV versus gas savings</h2>
+    <div class="grid3">
+      <label>Gas price ($/gal)
+        <input id="gasPrice" type="number" min="0" step="0.01" value="3.20">
+      </label>
+      <label>Gas vehicle MPG
+        <input id="mpg" type="number" min="1" step="0.1" value="28">
+      </label>
+      <label>Trip distance (miles)
+        <input id="tripMiles" type="number" min="0" step="1" value="60">
+      </label>
+    </div>
+    <button id="calculate" class="primary" type="button">CALCULATE</button>
+  </div>
+
+  <div class="card">
+    <h2>Results</h2>
+    <div class="metrics">
+      <div class="metric"><div class="k">Charge time</div><div class="v" id="chargeTime">—</div></div>
+      <div class="metric"><div class="k">Finish time</div><div class="v" id="finishTime">—</div></div>
+      <div class="metric"><div class="k">Energy added</div><div class="v" id="energyAdded">—</div></div>
+      <div class="metric"><div class="k">Charging cost</div><div class="v good" id="chargeCost">—</div></div>
+      <div class="metric"><div class="k">Miles gained</div><div class="v" id="milesGained">—</div></div>
+      <div class="metric"><div class="k">EV trip cost</div><div class="v" id="evTripCost">—</div></div>
+      <div class="metric"><div class="k">Gas trip cost</div><div class="v" id="gasTripCost">—</div></div>
+      <div class="metric"><div class="k">Trip savings</div><div class="v good" id="tripSavings">—</div></div>
+    </div>
+    <div class="note" id="status">Enter your values and calculate.</div>
+  </div>
+
+  <div class="footer">NISMO EV · Estimates only. DC fast charging tapers as battery percentage rises.</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function setNow(){
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset()*60000);
+  $("startTime").value = local.toISOString().slice(0,16);
+}
+function durationText(hours){
+  const mins = Math.round(hours*60);
+  return `${Math.floor(mins/60)} hr ${mins%60} min`;
+}
+function calculate(){
+  const battery=+$("battery").value,start=+$("startPct").value,target=+$("targetPct").value;
+  const power=+$("power").value,loss=+$("loss").value,eff=+$("efficiency").value,rate=+$("rate").value;
+  const gasPrice=+$("gasPrice").value,mpg=+$("mpg").value,tripMiles=+$("tripMiles").value;
+  if(target<=start || battery<=0 || power<=0 || loss>=100){
+    $("status").textContent="Check your inputs. Target percentage must be higher than the starting percentage.";
+    return;
+  }
+  const batteryAdded=battery*(target-start)/100;
+  const wallEnergy=batteryAdded/(1-loss/100);
+  let hours=wallEnergy/power;
+  if(power>=25 && target>80){
+    const above80=Math.max(0,battery*(target-Math.max(start,80))/100);
+    hours += (above80/(1-loss/100)/power)*1.5;
+  }
+  const cost=wallEnergy*rate;
+  const miles=batteryAdded*eff;
+  const evCostPerMile=rate/(eff*(1-loss/100));
+  const evTrip=tripMiles*evCostPerMile;
+  const gasTrip=(tripMiles/mpg)*gasPrice;
+  const savings=gasTrip-evTrip;
+
+  $("chargeTime").textContent=durationText(hours);
+  const startTime=new Date($("startTime").value);
+  $("finishTime").textContent=isNaN(startTime)?"—":new Date(startTime.getTime()+hours*3600000).toLocaleString([], {weekday:"short",hour:"numeric",minute:"2-digit"});
+  $("energyAdded").textContent=batteryAdded.toFixed(1)+" kWh";
+  $("chargeCost").textContent="$"+cost.toFixed(2);
+  $("milesGained").textContent=Math.round(miles)+" mi";
+  $("evTripCost").textContent="$"+evTrip.toFixed(2);
+  $("gasTripCost").textContent="$"+gasTrip.toFixed(2);
+  $("tripSavings").textContent=(savings>=0?"$":"-$")+Math.abs(savings).toFixed(2);
+  $("status").textContent=power>=25?"DC estimate includes tapering above 80%.":"Level 1/2 estimate assumes steady charging power.";
+}
+document.querySelectorAll(".mode").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".mode").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    $("power").value=btn.dataset.power;
+    calculate();
+  });
+});
+$("vehicle").addEventListener("change",e=>{
+  if(e.target.value!=="custom"){
+    const [b,eff]=e.target.value.split("|");
+    $("battery").value=b;$("efficiency").value=eff;
+  }
+  calculate();
+});
+$("ratePreset").addEventListener("change",e=>{
+  if(e.target.value!=="custom") $("rate").value=e.target.value;
+  calculate();
+});
+$("calculate").addEventListener("click",calculate);
+document.querySelectorAll("input,select").forEach(el=>el.addEventListener("change",calculate));
+setNow();calculate();
+</script>
+</body>
+</html>
