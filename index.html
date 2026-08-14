@@ -218,7 +218,7 @@ async function startTimer(){
  $("startTimer").textContent="SCHEDULING…";
  $("timerStatus").textContent="Scheduling secure push…";
  try{
-  const pushTime=new Date(finishTime.getTime()+8000);
+  const pushTime=new Date(finishTime.getTime()+15000);
   const result=await schedulePushNotification(pushTime,label);
   localStorage.setItem("nismoScheduledNotificationId",result.notificationId||"");
   $("timerStatus").textContent="Push scheduled for "+finishTime.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
