@@ -257,7 +257,26 @@ async function beep(){
   console.error("Alarm sound failed",e);
  }
 }
-async function alarm(){const label=localStorage.getItem("nismoTimerLabel")||$("alarmLabel").value||"Charging complete";$("timerStatus").textContent=label;$("countdown").textContent="DONE";for(let i=0;i<3;i++)setTimeout(beep,i*900);if(navigator.vibrate)navigator.vibrate([500,250,500,250,800]);if("Notification"in window&&Notification.permission==="granted"){try{new Notification("ReCharge EV Scheduler",{body:label,icon:"icon-192.svg"})}catch(e){}}saveHistory()}
+async function alarm(){
+ const label=
+   localStorage.getItem("nismoTimerLabel")||
+   $("alarmLabel").value||
+   "Charging complete";
+
+ $("timerStatus").textContent=label;
+ $("countdown").textContent="DONE";
+
+ // Play the ReCharge alarm immediately.
+ for(let i=0;i<3;i++){
+   setTimeout(beep,i*900);
+ }
+
+ if(navigator.vibrate){
+   navigator.vibrate([500,250,500,250,800]);
+ }
+
+ saveHistory();
+}
 $("startTimer").addEventListener("click",startTimer);$("cancelTimer").addEventListener("click",cancelTimer);$("testAlarm").addEventListener("click",alarm);
 function saveHistory(){if(!lastResult)return;const items=JSON.parse(localStorage.getItem("nismoHistory")||"[]");items.unshift({...lastResult,date:new Date().toISOString()});localStorage.setItem("nismoHistory",JSON.stringify(items.slice(0,50)))}
 function renderHistory(){const items=JSON.parse(localStorage.getItem("nismoHistory")||"[]");$("sessionCount").textContent=items.length;$("totalEnergy").textContent=items.reduce((a,x)=>a+x.added,0).toFixed(1)+" kWh";$("totalCost").textContent="$"+items.reduce((a,x)=>a+x.cost,0).toFixed(2);if(!items.length){$("historyList").className="empty";$("historyList").textContent="No saved charging sessions yet.";return}$("historyList").className="";$("historyList").innerHTML=items.map(x=>`<div class="historyItem"><div><strong>${x.start}% → ${x.target}%</strong><span>${new Date(x.date).toLocaleString()} · ${x.power} kW</span></div><div><strong>$${x.cost.toFixed(2)}</strong><span>${x.added.toFixed(1)} kWh</span></div></div>`).join("")}
