@@ -1,6 +1,6 @@
 {
-  "name": "NISMO EV Charging Companion",
-  "short_name": "NISMO EV",
+  "name": "ReCharge EV Scheduler",
+  "short_name": "ReCharge EV",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
