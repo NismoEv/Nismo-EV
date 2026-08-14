@@ -1,15 +1,19 @@
 <!doctype html>
+<!--
+Copyright © 2026 Matthew Dicker. All rights reserved.
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080808">
+<meta name="copyright" content="© 2026 Matthew Dicker. All rights reserved.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="NISMO EV">
+<meta name="apple-mobile-web-app-title" content="ReCharge EV Scheduler">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.svg">
-<title>NISMO EV 3.3</title>
+<title>ReCharge EV Scheduler 3.3</title>
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
 window.OneSignalDeferred=window.OneSignalDeferred||[];
@@ -45,7 +49,7 @@ label{display:block;font-size:.82rem;color:var(--muted)}input,select{width:100%;
 </head>
 <body>
 <div class="app">
-<div class="top"><div><div class="brand">NISMO <b>EV</b></div><div class="sub">Charging calculator, timer and history</div></div><div class="badge">3.3</div></div>
+<div class="top"><div><div class="brand">ReCharge <b>EV</b> Scheduler</div><div class="sub">Charging calculator, timer and history</div></div><div class="badge">3.3</div></div>
 <div class="tabs tabs4"><button class="tab active" data-view="calculator">Calculator</button><button class="tab" data-view="timer">Timer</button><button class="tab" data-view="history">History</button><button class="tab" data-view="diagnostics">Diagnostics</button></div>
 
 <main id="calculator" class="view active">
@@ -64,7 +68,7 @@ label{display:block;font-size:.82rem;color:var(--muted)}input,select{width:100%;
 </main>
 
 <main id="timer" class="view">
-<section class="card"><h2>Charging alarm</h2><div id="notificationStatus" class="statusPill">Notifications not checked</div><button class="primary" id="enableNotifications">ENABLE NOTIFICATIONS</button><p class="notice">On iPhone, open NISMO EV from its Home Screen icon before enabling notifications.</p></section>
+<section class="card"><h2>Charging alarm</h2><div id="notificationStatus" class="statusPill">Notifications not checked</div><button class="primary" id="enableNotifications">ENABLE NOTIFICATIONS</button><p class="notice">On iPhone, open ReCharge EV Scheduler from its Home Screen icon before enabling notifications.</p></section>
 <section class="card"><div class="grid"><label>Timer duration (minutes)<input id="timerMinutes" type="number" value="60" min="1"></label><label>Alarm label<input id="alarmLabel" type="text" value="Charging complete"></label></div><div class="timer" id="countdown">01:00:00</div><div class="timerStatus" id="timerStatus">Ready</div><div class="actionRow"><button class="primary" id="startTimer">START TIMER</button><button class="danger" id="cancelTimer">CANCEL</button></div><button class="secondary" id="testAlarm" style="width:100%;margin-top:10px">TEST ALARM</button><p class="notice">Start Timer now securely schedules a OneSignal push through Cloudflare, so the completion alert can arrive after the app is closed.</p></section>
 </main>
 
@@ -86,7 +90,7 @@ label{display:block;font-size:.82rem;color:var(--muted)}input,select{width:100%;
 <p class="notice">Reset removes old service-worker registrations and cached website data, then reloads the app. After it reloads, tap Enable Notifications again.</p>
 </section>
 </main>
-<div class="footer">NISMO-inspired fan utility. Estimates vary by temperature, charger output and battery conditioning.</div>
+<div class="footer">ReCharge EV Scheduler · Estimates vary by temperature, charger output and battery conditioning.<br>&copy; 2026 Matthew Dicker. All rights reserved.</div>
 </div>
 
 <script>
@@ -203,7 +207,7 @@ async function startTimer(){
 function cancelTimer(){clearInterval(timerInterval);timerInterval=null;timerEnd=0;localStorage.removeItem("nismoTimerEnd");localStorage.removeItem("nismoTimerLabel");$("countdown").textContent="00:00:00";$("timerStatus").textContent="Local timer cancelled. A previously scheduled push may still arrive."}
 function tick(){const remaining=timerEnd-Date.now();$("countdown").textContent=formatRemaining(remaining);if(remaining<=0){clearInterval(timerInterval);timerInterval=null;localStorage.removeItem("nismoTimerEnd");alarm()}}
 function beep(){audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;g.gain.value=.18;o.start();setTimeout(()=>o.stop(),700)}
-async function alarm(){const label=localStorage.getItem("nismoTimerLabel")||$("alarmLabel").value||"Charging complete";$("timerStatus").textContent=label;$("countdown").textContent="DONE";for(let i=0;i<3;i++)setTimeout(beep,i*900);if(navigator.vibrate)navigator.vibrate([500,250,500,250,800]);if("Notification"in window&&Notification.permission==="granted"){try{new Notification("NISMO EV",{body:label,icon:"icon-192.svg"})}catch(e){}}saveHistory()}
+async function alarm(){const label=localStorage.getItem("nismoTimerLabel")||$("alarmLabel").value||"Charging complete";$("timerStatus").textContent=label;$("countdown").textContent="DONE";for(let i=0;i<3;i++)setTimeout(beep,i*900);if(navigator.vibrate)navigator.vibrate([500,250,500,250,800]);if("Notification"in window&&Notification.permission==="granted"){try{new Notification("ReCharge EV Scheduler",{body:label,icon:"icon-192.svg"})}catch(e){}}saveHistory()}
 $("startTimer").addEventListener("click",startTimer);$("cancelTimer").addEventListener("click",cancelTimer);$("testAlarm").addEventListener("click",alarm);
 function saveHistory(){if(!lastResult)return;const items=JSON.parse(localStorage.getItem("nismoHistory")||"[]");items.unshift({...lastResult,date:new Date().toISOString()});localStorage.setItem("nismoHistory",JSON.stringify(items.slice(0,50)))}
 function renderHistory(){const items=JSON.parse(localStorage.getItem("nismoHistory")||"[]");$("sessionCount").textContent=items.length;$("totalEnergy").textContent=items.reduce((a,x)=>a+x.added,0).toFixed(1)+" kWh";$("totalCost").textContent="$"+items.reduce((a,x)=>a+x.cost,0).toFixed(2);if(!items.length){$("historyList").className="empty";$("historyList").textContent="No saved charging sessions yet.";return}$("historyList").className="";$("historyList").innerHTML=items.map(x=>`<div class="historyItem"><div><strong>${x.start}% → ${x.target}%</strong><span>${new Date(x.date).toLocaleString()} · ${x.power} kW</span></div><div><strong>$${x.cost.toFixed(2)}</strong><span>${x.added.toFixed(1)} kWh</span></div></div>`).join("")}
