@@ -13,7 +13,7 @@ Copyright © 2026 Matthew Dicker. All rights reserved.
 <meta name="apple-mobile-web-app-title" content="ReCharge EV Scheduler">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.svg">
-<title>ReCharge EV Scheduler 3.3</title>
+<title>ReCharge EV Scheduler 3.4</title>
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
 window.OneSignalDeferred=window.OneSignalDeferred||[];
@@ -49,7 +49,7 @@ label{display:block;font-size:.82rem;color:var(--muted)}input,select{width:100%;
 </head>
 <body>
 <div class="app">
-<div class="top"><div><div class="brand">ReCharge <b>EV</b> Scheduler</div><div class="sub">Charging calculator, timer and history</div></div><div class="badge">3.3</div></div>
+<div class="top"><div><div class="brand">ReCharge <b>EV</b> Scheduler</div><div class="sub">Charging calculator, timer and history</div></div><div class="badge">3.4</div></div>
 <div class="tabs tabs4"><button class="tab active" data-view="calculator">Calculator</button><button class="tab" data-view="timer">Timer</button><button class="tab" data-view="history">History</button><button class="tab" data-view="diagnostics">Diagnostics</button></div>
 
 <main id="calculator" class="view active">
@@ -179,7 +179,34 @@ async function schedulePushNotification(sendAt,label){
  return result;
 }
 
+function armAudio(){
+ try{
+  audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
+
+  if(audioCtx.state==="suspended"){
+   audioCtx.resume().catch(()=>{});
+  }
+
+  // Unlock Web Audio while START TIMER is still a direct user gesture.
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+
+  o.connect(g);
+  g.connect(audioCtx.destination);
+
+  o.frequency.value=880;
+  g.gain.value=0.001;
+
+  o.start();
+  o.stop(audioCtx.currentTime+0.03);
+ }catch(e){
+  console.error("Unable to arm audio",e);
+ }
+}
+
 async function startTimer(){
+ armAudio();
+
  const mins=+$("timerMinutes").value;
  if(!mins||mins<1){$("timerStatus").textContent="Enter a valid timer duration";return}
  const label=$("alarmLabel").value||"Charging complete";
@@ -206,7 +233,29 @@ async function startTimer(){
 }
 function cancelTimer(){clearInterval(timerInterval);timerInterval=null;timerEnd=0;localStorage.removeItem("nismoTimerEnd");localStorage.removeItem("nismoTimerLabel");$("countdown").textContent="00:00:00";$("timerStatus").textContent="Local timer cancelled. A previously scheduled push may still arrive."}
 function tick(){const remaining=timerEnd-Date.now();$("countdown").textContent=formatRemaining(remaining);if(remaining<=0){clearInterval(timerInterval);timerInterval=null;localStorage.removeItem("nismoTimerEnd");alarm()}}
-function beep(){audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=880;g.gain.value=.18;o.start();setTimeout(()=>o.stop(),700)}
+async function beep(){
+ try{
+  audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
+
+  if(audioCtx.state==="suspended"){
+   try{await audioCtx.resume()}catch(e){}
+  }
+
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+
+  o.connect(g);
+  g.connect(audioCtx.destination);
+
+  o.frequency.value=880;
+  g.gain.value=.18;
+
+  o.start();
+  o.stop(audioCtx.currentTime+0.7);
+ }catch(e){
+  console.error("Alarm sound failed",e);
+ }
+}
 async function alarm(){const label=localStorage.getItem("nismoTimerLabel")||$("alarmLabel").value||"Charging complete";$("timerStatus").textContent=label;$("countdown").textContent="DONE";for(let i=0;i<3;i++)setTimeout(beep,i*900);if(navigator.vibrate)navigator.vibrate([500,250,500,250,800]);if("Notification"in window&&Notification.permission==="granted"){try{new Notification("ReCharge EV Scheduler",{body:label,icon:"icon-192.svg"})}catch(e){}}saveHistory()}
 $("startTimer").addEventListener("click",startTimer);$("cancelTimer").addEventListener("click",cancelTimer);$("testAlarm").addEventListener("click",alarm);
 function saveHistory(){if(!lastResult)return;const items=JSON.parse(localStorage.getItem("nismoHistory")||"[]");items.unshift({...lastResult,date:new Date().toISOString()});localStorage.setItem("nismoHistory",JSON.stringify(items.slice(0,50)))}
