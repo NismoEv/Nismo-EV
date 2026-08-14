@@ -13,7 +13,7 @@ Copyright © 2026 Matthew Dicker. All rights reserved.
 <meta name="apple-mobile-web-app-title" content="ReCharge EV Scheduler">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.svg">
-<title>ReCharge EV Scheduler 3.4</title>
+<title>ReCharge EV Scheduler 3.5</title>
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
 window.OneSignalDeferred=window.OneSignalDeferred||[];
@@ -49,7 +49,7 @@ label{display:block;font-size:.82rem;color:var(--muted)}input,select{width:100%;
 </head>
 <body>
 <div class="app">
-<div class="top"><div><div class="brand">ReCharge <b>EV</b> Scheduler</div><div class="sub">Charging calculator, timer and history</div></div><div class="badge">3.4</div></div>
+<div class="top"><div><div class="brand">ReCharge <b>EV</b> Scheduler</div><div class="sub">Charging calculator, timer and history</div></div><div class="badge">3.5</div></div>
 <div class="tabs tabs4"><button class="tab active" data-view="calculator">Calculator</button><button class="tab" data-view="timer">Timer</button><button class="tab" data-view="history">History</button><button class="tab" data-view="diagnostics">Diagnostics</button></div>
 
 <main id="calculator" class="view active">
@@ -234,7 +234,7 @@ async function startTimer(){
 }
 function cancelTimer(){clearInterval(timerInterval);timerInterval=null;timerEnd=0;localStorage.removeItem("nismoTimerEnd");localStorage.removeItem("nismoTimerLabel");$("countdown").textContent="00:00:00";$("timerStatus").textContent="Local timer cancelled. A previously scheduled push may still arrive."}
 function tick(){const remaining=timerEnd-Date.now();$("countdown").textContent=formatRemaining(remaining);if(remaining<=0){clearInterval(timerInterval);timerInterval=null;localStorage.removeItem("nismoTimerEnd");alarm()}}
-async function beep(){
+async function playAlarmSequence(){
  try{
   audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();
 
@@ -242,19 +242,27 @@ async function beep(){
    try{await audioCtx.resume()}catch(e){}
   }
 
-  const o=audioCtx.createOscillator();
-  const g=audioCtx.createGain();
+  const start=audioCtx.currentTime;
 
-  o.connect(g);
-  g.connect(audioCtx.destination);
+  // Schedule all five beeps on the Web Audio timeline at once.
+  for(let i=0;i<5;i++){
+   const o=audioCtx.createOscillator();
+   const g=audioCtx.createGain();
 
-  o.frequency.value=880;
-  g.gain.value=.25;
+   o.connect(g);
+   g.connect(audioCtx.destination);
 
-  o.start();
-  o.stop(audioCtx.currentTime+0.7);
+   o.frequency.value=880;
+   g.gain.value=.25;
+
+   const beepStart=start+(i*1.0);
+   const beepEnd=beepStart+0.7;
+
+   o.start(beepStart);
+   o.stop(beepEnd);
+  }
  }catch(e){
-  console.error("Alarm sound failed",e);
+  console.error("Alarm sequence failed",e);
  }
 }
 async function alarm(){
@@ -266,13 +274,11 @@ async function alarm(){
  $("timerStatus").textContent=label;
  $("countdown").textContent="DONE";
 
- // Play the ReCharge alarm immediately.
- for(let i=0;i<3;i++){
-   setTimeout(beep,i*1000);
- }
+ // Play five 880 Hz beeps without relying on repeated setTimeout calls.
+ await playAlarmSequence();
 
  if(navigator.vibrate){
-   navigator.vibrate([500,250,500,250,800]);
+  navigator.vibrate([500,250,500,250,800]);
  }
 
  saveHistory();
